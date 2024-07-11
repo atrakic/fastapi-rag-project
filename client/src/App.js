@@ -6,7 +6,8 @@ import ResponseDisplay from './ResponseDisplay';
 import axios from 'axios';
 import './App.css';
 
-let baseHostUrl = '/api';
+// use environment variable to set the base URL
+let baseHostUrl = process.env.REACT_APP_API_URL;
 
 // eslint-disable-next-line no-restricted-globals
 if (location.host=== 'localhost:3000') {
