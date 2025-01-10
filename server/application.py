@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from openai import OpenAI
@@ -8,22 +10,32 @@ from fastapi.middleware.cors import CORSMiddleware
 import os, uuid
 import requests
 
+load_dotenv()
+
+
 #
 ##
 ### Configuration
-QDRANT_HOST = os.environ["QDRANT_HOST"]
-QDRANT_PORT = os.environ["QDRANT_PORT"]
+QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
+QDRANT_PORT = os.getenv("QDRANT_PORT", "6333")
+COLLECTION_NAME = os.getenv("COLLECTION_NAME", "demo")
+
 qdrant_client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
 
 app = FastAPI()
 
-# app.add_middleware(
-#     CORSMiddleware,
-#     allow_origins=["http://localhost:3000", "https://salmon-moss-08b81541e.5.azurestaticapps.net"],  # Allows access from your React app
-#     allow_credentials=True,
-#     allow_methods=["*"],  # Allows all methods
-#     allow_headers=["*"],  # Allows all headers
-# )
+app.add_middleware(
+    CORSMiddleware,
+    # Allows access from your React app
+    allow_origins=[
+        "http://client:3000",
+        "http://localhost:3000",
+        "https://salmon-moss-08b81541e.5.azurestaticapps.net",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
 
 
 #
@@ -52,6 +64,11 @@ def does_collection_exist(protocol, hostname, port, collection_name):
 ### API routes
 
 
+@app.get("/debug")
+async def debug():
+    return {"env": dict(os.environ)}
+
+
 class TextInput(BaseModel):
     text: str
     apiKey: str
@@ -73,7 +90,7 @@ async def generate_embeddings(input: TextInput):
         )
         vector_id = str(uuid.uuid4())
 
-        collection_name = "example_collection"
+        collection_name = COLLECTION_NAME
         collection_exists = does_collection_exist(
             "http", QDRANT_HOST, QDRANT_PORT, collection_name
         )
@@ -81,9 +98,13 @@ async def generate_embeddings(input: TextInput):
         if not collection_exists:
             try:
                 qdrant_client.create_collection(
-                    collection_name="example_collection",
-                    vectors_config=VectorParams(size=1536, distance=Distance.COSINE),
+                    collection_name=COLLECTION_NAME,
+                    vectors_config=VectorParams(
+                        size=1536,
+                        distance=Distance.COSINE,
+                    ),
                 )
+                print(f"New collection {COLLECTION_NAME} is created successfully")
             except Exception as e:
                 raise HTTPException(status_code=500, detail=str(e))
 
@@ -93,12 +114,17 @@ async def generate_embeddings(input: TextInput):
         )
 
         # Insert the point into Qdrant
-        qdrant_client.upsert(collection_name="example_collection", points=[point])
+        qdrant_client.upsert(collection_name=COLLECTION_NAME, points=[point])
         return {"message": "Embeddings generated and stored successfully"}
 
     except Exception as e:
         print(f"An error occurred: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# @app.options("/api/retrieve-and-generate-response/")
+# async def options_retrieve_and_generate_response():
+#    return {"Allow": "POST, OPTIONS"}
 
 
 @app.post("/api/retrieve-and-generate-response/")
@@ -116,13 +142,15 @@ async def retrieve_and_generate_response(input: TextInput):
 
         # Search for the embeddings in Qdrant
         search_result = qdrant_client.search(
-            collection_name="example_collection", query_vector=embeddings, limit=3
+            collection_name=COLLECTION_NAME, query_vector=embeddings, limit=3
         )
+
         documents = (
             [{"text": doc.payload["text"], "score": doc.score} for doc in search_result]
             if search_result
             else []
         )
+
         prompt = f"Question: {input.text}\n\n" + "\n\n".join(
             [f"Document {i+1}: {doc['text']}" for i, doc in enumerate(documents)]
         )

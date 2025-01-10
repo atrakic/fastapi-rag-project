@@ -25,7 +25,8 @@ function App() {
   const handleSearchSubmit = async (text) => {
     setIsLoading(true);
     try {
-      const result = await axios.post(`${baseHostUrl}/retrieve-and-generate-response/`, { text, apiKey });
+      const result = await axios.post(`${baseHostUrl}/retrieve-and-generate-response/`,
+        { text, apiKey });
       setResponse(result.data.response);
       setDocuments(result.data.documents);
     } catch (error) {
@@ -37,7 +38,8 @@ function App() {
 
   const handleStoreSubmit = async (text) => {
     try {
-      const result = await axios.post(`${baseHostUrl}/generate-and-store-embeddings/`, { text, apiKey });
+      const result = await axios.post(`${baseHostUrl}/generate-and-store-embeddings/`,
+        { text, apiKey });
       setStoreStatus(result.data.message);
     } catch (error) {
       console.error('Error storing data: ', error);

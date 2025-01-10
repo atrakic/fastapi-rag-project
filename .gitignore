@@ -1,3 +1,11 @@
 venv
 node_modules
 server/app/__pycache__
+qdrant_data
+
+
+# Environments
+.venv
+env/
+venv/
+ENV/

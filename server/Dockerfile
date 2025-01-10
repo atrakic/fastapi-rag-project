@@ -11,9 +11,10 @@ RUN /venv/bin/pip install --disable-pip-version-check -r /requirements.txt
 
 FROM gcr.io/distroless/python3-debian11 as final
 LABEL maintainer="Admir Trakic <atrakic@users.noreply.github.com>"
-COPY --from=build-venv /venv /venv
 WORKDIR /app
-COPY . .
+
+COPY --from=build-venv /venv /venv
+COPY application.py gunicorn.conf.py oryx.env ./
 
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE=1

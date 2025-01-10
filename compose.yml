@@ -1,4 +1,5 @@
 services:
+  # prompt for OpenAI API key input in the web interface
   client:
     build:
       context: ./client
@@ -24,13 +25,28 @@ services:
     depends_on:
       - qdrant
 
+  # qdrant-setup:
+  #   build:
+  #     context: ./setup
+  #     dockerfile: Dockerfile
+  #   container_name: qdrant-setup
+  #   tty: true
+  #   environment:
+  #     - QDRANT_HOST=qdrant
+  #     - QDRANT_PORT=6333
+  #   volumes:
+  #     - $PWD/setup/qdrant_setup.py:/app/qdrant_setup.py
+  #   entrypoint: "python qdrant_setup.py"
+  #   depends_on:
+  #     - qdrant
+
   qdrant:
     image: qdrant/qdrant:latest
     restart: always
     container_name: qdrant
     ports:
-      - 6333:6333
-      - 6334:6334
+      - 6333:6333 # Dashboard - localhost:6333/dashboard, REST API - localhost:6333
+      - 6334:6334 # GRPC API - localhost:6334
     expose:
       - 6333
       - 6334
@@ -39,9 +55,9 @@ services:
       - source: qdrant_config
         target: /qdrant/config/production.yaml
     volumes:
-      - ./qdrant_data:/qdrant/storage
+      - $PWD/qdrant_data:/qdrant/storage
 
 configs:
   qdrant_config:
     content: |
-      log_level: INFO      
+      log_level: INFO
