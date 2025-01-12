@@ -20,13 +20,13 @@ function App() {
   const [documents, setDocuments] = useState([]);
   const [storeStatus, setStoreStatus] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [apiKey, setApiKey] = useState(''); // State to hold the API key
+  // const [apiKey, setApiKey] = useState(''); // State to hold the API key
 
   const handleSearchSubmit = async (text) => {
     setIsLoading(true);
     try {
       const result = await axios.post(`${baseHostUrl}/retrieve-and-generate-response/`,
-        { text, apiKey });
+        { text });
       setResponse(result.data.response);
       setDocuments(result.data.documents);
     } catch (error) {
@@ -39,7 +39,7 @@ function App() {
   const handleStoreSubmit = async (text) => {
     try {
       const result = await axios.post(`${baseHostUrl}/generate-and-store-embeddings/`,
-        { text, apiKey });
+        { text });
       setStoreStatus(result.data.message);
     } catch (error) {
       console.error('Error storing data: ', error);
@@ -47,29 +47,21 @@ function App() {
     }
   };
 
-  const handleApiKeyChange = (e) => {
-    setApiKey(e.target.value);
-  };
   return (
     <div className="app container mt-5">
       <h1 className="text-center mb-4">Retrieval-Augmented Generation Basic App</h1>
-      <div className="configuration-section card mb-4">
+      <div className="store-section card">
         <div className="card-body">
-          <h2 className="card-title">Configuration</h2>
-          <p className="card-text">IMPORTANT: You must supply your OpenAI API key in this box. It will be used to query the OpenAI API.</p>
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Enter your OpenAI API Key here"
-            value={apiKey}
-            onChange={handleApiKeyChange}
-          />
+          <h2 className="card-title">Store new text</h2>
+          <p className="card-text">Use the input box below to store new data inside the vector database. The text you input will first be sent to the Ollama API to generate embeddings, and then those embeddings will be stored in a Qdrant vector database.</p>
+          <StoreInputForm onSubmit={handleStoreSubmit} placeholder="Enter text to store in DB" />
+          <div className="status mt-3">{storeStatus}</div>
         </div>
       </div>
       <div className="search-section card mb-4">
         <div className="card-body">
           <h2 className="card-title">Ask a question</h2>
-          <p className="card-text">After you've stored documents in the vector database, you can use the input box below to search the vector database for stored text strings/documents. The text you search for will be sent to OpenAI to generate embeddings, and those embeddings will be used during the retrieval process to surface information relating to your search query.</p>
+          <p className="card-text">After you've stored documents in the vector database, use the input box below to search the vector database for stored text strings/documents. The text you search for will be sent to Ollama API to generate embeddings, and those embeddings will be used during the retrieval process to surface information relating to your search query.</p>
           <InputForm onSubmit={handleSearchSubmit} placeholder="Enter your question here" />
           {isLoading ? (
             <div className="text-center">
@@ -83,14 +75,6 @@ function App() {
               <DocumentsDisplay documents={documents} />
             </>
           )}
-        </div>
-      </div>
-      <div className="store-section card">
-        <div className="card-body">
-          <h2 className="card-title">Store new text</h2>
-          <p className="card-text">You can use the input box below to store new data inside the vector database. The text you input will first be sent to the OpenAI API to generate embeddings, and then those embeddings will be stored in a Qdrant vector database.</p>
-          <StoreInputForm onSubmit={handleStoreSubmit} placeholder="Enter text to store in DB" />
-          <div className="status mt-3">{storeStatus}</div>
         </div>
       </div>
     </div>

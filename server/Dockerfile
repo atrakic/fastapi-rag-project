@@ -8,13 +8,12 @@ FROM build AS build-venv
 COPY requirements.txt /requirements.txt
 RUN /venv/bin/pip install --disable-pip-version-check -r /requirements.txt
 
-
-FROM gcr.io/distroless/python3-debian11 as final
+FROM gcr.io/distroless/python3-debian11 AS final
 LABEL maintainer="Admir Trakic <atrakic@users.noreply.github.com>"
 WORKDIR /app
 
 COPY --from=build-venv /venv /venv
-COPY application.py gunicorn.conf.py oryx.env ./
+COPY . ./
 
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE=1

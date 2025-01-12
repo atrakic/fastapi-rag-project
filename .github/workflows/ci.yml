@@ -1,0 +1,55 @@
+name: CI
+
+on: [pull_request, workflow_dispatch]
+
+jobs:
+    test-and-lint-nodejs:
+        runs-on: ubuntu-latest
+        defaults:
+          run:
+            working-directory: ./client
+        steps:
+          - name: Checkout repository
+            uses: actions/checkout@v2
+
+          - name: Set up Node.js
+            uses: actions/setup-node@v2
+            with:
+              node-version: '14'
+
+          - name: npm ci, build and test
+            run: |
+              npm ci
+              npm run build --if-present
+              npm test
+
+    test-and-lint-python:
+        runs-on: ubuntu-latest        
+        defaults:
+          run:
+            working-directory: ./server
+        steps:
+          - name: Checkout repository
+            uses: actions/checkout@v2
+
+          - name: Set up Python
+            uses: actions/setup-python@v2
+            with:
+              python-version: '3.8'
+
+          - name: Install dependencies
+            run: |
+              python -m venv venv
+              source venv/bin/activate
+              pip install -r requirements.txt
+
+          - name: Run tests
+            run: |
+              source venv/bin/activate
+              pip install pytest flake8
+              pytest
+
+          - name: Run linter
+            run: |
+              source venv/bin/activate
+              flake8 .

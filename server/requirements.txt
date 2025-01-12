@@ -1,7 +1,9 @@
 fastapi
-qdrant_client
+ollama
+qdrant-client[fastembed]
 uvicorn
 requests
 python-dotenv
-openai==1.55.3
 pydantic==2.7.1
+# qdrant-client[fastembed-gpu]
+# chromadb
