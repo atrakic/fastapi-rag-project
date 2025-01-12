@@ -1,5 +1,4 @@
 services:
-  # prompt for OpenAI API key input in the web interface
   client:
     build:
       context: ./client
@@ -12,34 +11,45 @@ services:
       - 3000:3000
     depends_on:
       - server
-
   server:
     build: ./server
     restart: always
     container_name: server
+    env_file:
+      - .env
     environment:
-      - QDRANT_HOST=qdrant
-      - QDRANT_PORT=6333
+      - OLAMA_URL=http://ollama:11434
+      - QDRANT_URL=http://qdrant:6333
+      - OLAMA_MODEL=${OLAMA_MODEL:?"OLAMA_MODEL is required"}
     ports:
       - 8000:8000
     depends_on:
       - qdrant
-
-  # qdrant-setup:
-  #   build:
-  #     context: ./setup
-  #     dockerfile: Dockerfile
-  #   container_name: qdrant-setup
-  #   tty: true
-  #   environment:
-  #     - QDRANT_HOST=qdrant
-  #     - QDRANT_PORT=6333
-  #   volumes:
-  #     - $PWD/setup/qdrant_setup.py:/app/qdrant_setup.py
-  #   entrypoint: "python qdrant_setup.py"
-  #   depends_on:
-  #     - qdrant
-
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    tty: true
+    env_file:
+      - .env
+    environment:
+      - OLLAMA_ORIGINS="*"
+      - OLLAMA_HOST=0.0.0.0
+      - OLAMA_MODEL=${OLAMA_MODEL:?"OLAMA_MODEL is required"}
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        /bin/ollama serve &
+        # Record Process ID
+        pid=$!
+        # Wait for the server to start
+        sleep 5
+        # Pull the model
+        /bin/ollama pull $${OLAMA_MODEL}
+        # Wait for Ollama process to finish
+        wait $$pid
+    volumes:
+      - ollama:/root/.ollama
   qdrant:
     image: qdrant/qdrant:latest
     restart: always
@@ -50,12 +60,15 @@ services:
     expose:
       - 6333
       - 6334
-      - 6335
     configs:
       - source: qdrant_config
         target: /qdrant/config/production.yaml
     volumes:
       - $PWD/qdrant_data:/qdrant/storage
+
+volumes:
+  ollama:
+  qdrant_data:
 
 configs:
   qdrant_config:
