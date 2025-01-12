@@ -5,6 +5,10 @@ on: [pull_request, workflow_dispatch]
 jobs:
     test-and-lint-nodejs:
         runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: ./client
+            
         steps:
             - name: Checkout repository
               uses: actions/checkout@v2
@@ -24,7 +28,11 @@ jobs:
               run: npm run lint
 
     test-and-lint-python:
-        runs-on: ubuntu-latest
+        runs-on: ubuntu-latest        
+        defaults:
+            run:
+                working-directory: ./server
+
         steps:
             - name: Checkout repository
               uses: actions/checkout@v2
@@ -43,6 +51,7 @@ jobs:
             - name: Run tests
               run: |
                 source venv/bin/activate
+                pip install pytest flake8
                 pytest
 
             - name: Run linter
